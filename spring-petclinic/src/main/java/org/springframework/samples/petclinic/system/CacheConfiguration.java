@@ -16,6 +16,7 @@
 
 package org.springframework.samples.petclinic.system;
 
+import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;

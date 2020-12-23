@@ -15,15 +15,14 @@
  */
 package org.springframework.samples.petclinic.owner;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.samples.petclinic.visit.VisitRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
@@ -42,12 +41,27 @@ class OwnerController {
 	private static final String VIEWS_OWNER_CREATE_OR_UPDATE_FORM = "owners/createOrUpdateOwnerForm";
 
 	private final OwnerRepository owners;
-
 	private VisitRepository visits;
+	private final PetRepository petRepository;
+	private final ApplicationContext applicationContext;
 
-	public OwnerController(OwnerRepository clinicService, VisitRepository visits) {
+	@Autowired
+	public OwnerController(OwnerRepository clinicService, VisitRepository visits, PetRepository petRepository, ApplicationContext applicationContext) {
 		this.owners = clinicService;
 		this.visits = visits;
+		this.petRepository = petRepository;
+		this.applicationContext = applicationContext;
+	}
+
+	@GetMapping("/bean")
+	@ResponseBody
+	public String getBeanHash(){
+		int controllerHash = applicationContext.getBean(OwnerRepository.class).hashCode();
+		int injectedHash = owners.hashCode();
+		return "OwnerRepository's Bean HashCode from applicationContext is.. : " + controllerHash + "\n"
+			+ " :::: " + applicationContext.getBean(OwnerRepository.class) + "\n"
+			+ "OwnerRepository's Bean HashCode from Injected is.. : " + injectedHash + "\n"
+			+ " :::: " + owners;
 	}
 
 	@InitBinder
@@ -56,6 +70,7 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners/new")
+	@LogExecutionTime
 	public String initCreationForm(Map<String, Object> model) {
 		Owner owner = new Owner();
 		model.put("owner", owner);
@@ -63,6 +78,7 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/new")
+	@LogExecutionTime
 	public String processCreationForm(@Valid Owner owner, BindingResult result) {
 		if (result.hasErrors()) {
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
@@ -74,12 +90,14 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners/find")
+	@LogExecutionTime
 	public String initFindForm(Map<String, Object> model) {
 		model.put("owner", new Owner());
 		return "owners/findOwners";
 	}
 
 	@GetMapping("/owners")
+	@LogExecutionTime
 	public String processFindForm(Owner owner, BindingResult result, Map<String, Object> model) {
 
 		// allow parameterless GET request for /owners to return all records
@@ -117,6 +135,7 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners/{ownerId}/edit")
+	@LogExecutionTime
 	public String initUpdateOwnerForm(@PathVariable("ownerId") int ownerId, Model model) {
 		Owner owner = this.owners.findById(ownerId);
 		model.addAttribute(owner);
@@ -124,6 +143,7 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/{ownerId}/edit")
+	@LogExecutionTime
 	public String processUpdateOwnerForm(@Valid Owner owner, BindingResult result,
 			@PathVariable("ownerId") int ownerId) {
 		if (result.hasErrors()) {
@@ -142,6 +162,7 @@ class OwnerController {
 	 * @return a ModelMap with the model attributes for the view
 	 */
 	@GetMapping("/owners/{ownerId}")
+	@LogExecutionTime
 	public ModelAndView showOwner(@PathVariable("ownerId") int ownerId) {
 		ModelAndView mav = new ModelAndView("owners/ownerDetails");
 		Owner owner = this.owners.findById(ownerId);
